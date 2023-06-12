@@ -7,10 +7,14 @@ const {
 } = require("../controllers/authController");
 
 const express = require("express");
+const {
+  loginMiddleware,
+  registerMiddleware,
+} = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post("/login", login);
-router.post("/register", register);
+router.post("/login", loginMiddleware, login);
+router.post("/register", registerMiddleware, register);
 router.get("/allusers/:id", getAllUsers);
 router.post("/setavatar/:id", setAvatar);
 router.get("/logout/:id", logOut);

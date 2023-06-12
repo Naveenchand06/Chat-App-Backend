@@ -1,9 +1,10 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const register = async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, mobile, password } = req.body;
 
     const usernameCheck = await User.findOne({ username });
     if (usernameCheck) {
@@ -23,11 +24,21 @@ const register = async (req, res, next) => {
     const user = await User.create({
       email,
       username,
+      mobile,
       password: hashedPassword,
     });
+
+    const token = generateToken(user._id, user.email);
+
     const userObj = user.toObject();
     delete userObj.password;
-    return res.json({ status: true, user: userObj });
+    return res.json({
+      status: true,
+      data: {
+        token,
+        user: userObj,
+      },
+    });
   } catch (ex) {
     next(ex);
   }
@@ -35,9 +46,9 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.json({ msg: "Incorrect Username or Password", status: false });
     }
@@ -46,10 +57,17 @@ const login = async (req, res, next) => {
     if (!isPasswordValid) {
       return res.json({ msg: "Incorrect Username or Password", status: false });
     }
+    const token = generateToken(user._id, user.email);
 
     const userObj = user.toObject();
     delete userObj.password;
-    return res.json({ status: true, user: userObj });
+    return res.json({
+      status: true,
+      data: {
+        token,
+        user: userObj,
+      },
+    });
   } catch (ex) {
     next(ex);
   }
@@ -100,6 +118,9 @@ const logOut = (req, res, next) => {
   } catch (ex) {
     next(ex);
   }
+};
+const generateToken = (id, email) => {
+  return jwt.sign({ id, email }, process.env.JWT_SECRET);
 };
 
 module.exports = {
