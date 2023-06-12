@@ -1,24 +1,33 @@
-// Register Middleware
-// PATH -> /api/auth/signup
-const registerMiddleware = (req, res, next) => {
-  const { username, mobile, email, password } = req.body;
-  if (!username || !mobile || !email || !password) {
-    return res.status(401).json({ error: "Invalid Inputs" });
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
+
+const protect = async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      // Get token from header
+      token = req.headers.authorization.split(" ")[1];
+
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user from the token
+      req.user = await User.findById(decoded.id).select("-password");
+
+      next();
+    } catch (error) {
+      console.log(error);
+      return res.status(401).json({ error: "Not authorized" });
+    }
   }
-  next();
+
+  if (!token) {
+    return res.status(401).json({ error: "Not authorized" });
+  }
 };
 
-// Login Middleware
-// PATH -> /api/auth/login
-const loginMiddleware = (req, res, next) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(401).json({ error: "Invalid Inputs" });
-  }
-  next();
-};
-
-module.exports = {
-  registerMiddleware,
-  loginMiddleware,
-};
+module.exports = { protect };

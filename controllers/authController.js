@@ -75,7 +75,7 @@ const login = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ _id: { $ne: req.params.id } }).select([
+    const users = await User.find({ _id: { $ne: req.user.id } }).select([
       "email",
       "username",
       "avatarImage",
